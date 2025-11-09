@@ -10,14 +10,6 @@ class Program
         PlaylistConverterErrorThrower.DefaultErrorHandler = ConsoleErrorHandler;
         PlaylistConverterFileReadWrite.DefaultReader = ConsoleReader;
         PlaylistConverterFileReadWrite.DefaultWriter = ConsoleWriter;
-        
-        JsonDocument json = JsonDocument.Parse(File.ReadAllText(@"C:\samples\Classics.smpl"));
-        JsonElement root = json.RootElement;
-
-        JsonElement members = root.GetProperty("members");
-        var element = members[9];
-        var info = element.GetProperty("info").GetString();
-        var order = element.GetProperty("order").GetInt32();
     }
 
     public static readonly Dictionary<string, Func<string, string, string>> ArgCommands = new()
