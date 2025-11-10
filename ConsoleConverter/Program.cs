@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+﻿using System.Text;
 using PlaylistConverter;
 
 namespace ConsoleConverter;
@@ -8,8 +8,16 @@ class Program
     static void Main(string[] args)
     {
         PlaylistConverterErrorThrower.DefaultErrorHandler = ConsoleErrorHandler;
-        PlaylistConverterFileReadWrite.DefaultReader = ConsoleReader;
-        PlaylistConverterFileReadWrite.DefaultWriter = ConsoleWriter;
+        PlaylistFileReadWrite.DefaultReader = ConsoleReader;
+        PlaylistFileReadWrite.DefaultWriter = ConsoleWriter;
+
+        // M3u8File file = new M3u8File(@"C:\samples\Classics.m3u8");
+        //
+        // file.Export(@"C:\samples\test.m3u8");
+
+        SmplFile file = new SmplFile(@"C:\samples\Season 2-2.smpl");
+        
+        file.Export(@"C:\samples\smpltest.smpl");
     }
 
     public static readonly Dictionary<string, Func<string, string, string>> ArgCommands = new()
@@ -42,12 +50,12 @@ class Program
 
     private static string ConsoleReader(string path)
     {
-        return File.ReadAllText(path);
+        return File.ReadAllText(path, Encoding.UTF8);
     }
 
     private static void ConsoleWriter(string path, string contents)
     {
-        File.WriteAllText(path, contents);
+        File.WriteAllText(path, contents, Encoding.UTF8);
     }
 }
 

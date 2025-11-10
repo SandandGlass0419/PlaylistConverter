@@ -28,7 +28,7 @@ public static class PlaylistConverterErrorThrower
     }
 }
 
-public static class PlaylistConverterFileReadWrite
+public static class PlaylistFileReadWrite
 {
     public static Func<string, string>? DefaultReader { get; set; }
     public static Action<string, string>? DefaultWriter { get; set; }

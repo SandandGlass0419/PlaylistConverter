@@ -2,22 +2,22 @@ using System.Text.Json;
 
 namespace PlaylistConverter;
 
-public partial class SmplFile
+public partial class SmplFile : IPlaylist
 {
-    private string name = "My Playlist";
+    public string name = "Default Playlist Name";
     public string? Name
     {
         get { return name; }
-        protected set { name = value != null ? value : name; }
+        set { name = value != null ? value : name; }
     }
 
-    public SortedDictionary<int, string> Members { get; protected set; } = new();
+    public SortedDictionary<int, string> PlaylistContents { get; protected set; } = new();
 
     public SmplFile(string path)
     {
-        Deserialize(PlaylistConverterFileReadWrite.Read(path));
+        Deserialize(PlaylistFileReadWrite.Read(path));
     }
-    
+
     public void Deserialize(string fileText)
     {
         JsonElement RootElement = JsonDocument.Parse(fileText).RootElement;
@@ -27,7 +27,7 @@ public partial class SmplFile
         var ParsedMembers = ParseMembers(RootElement);
         foreach (var pair in ParsedMembers)
         {
-            Members.Add(pair.Key, pair.Value);
+            PlaylistContents.Add(pair.Key, pair.Value);
         }
     }
 
@@ -74,7 +74,60 @@ public partial class SmplFile
     }
 }
 
-public class M3u8File
+public partial class M3u8File : IPlaylist
 {
+    public const string Header = "#EXTM3U";
+
+    public string? Name { get; protected set; }
+
+    public SortedDictionary<int, string> PlaylistContents { get; protected set; } = new();
+
+    public M3u8File(string path)
+    {
+        Deserialize(PlaylistFileReadWrite.Read(path));
+    }
     
+    public void Deserialize(string fileText)
+    {
+        string[] splitText = fileText.Split('\n');
+
+        if (!HasHeaderDirective(splitText.First())) return;
+        
+        foreach (var entery in splitText)
+        {
+            if (ParsePramedDirectives(entery)) continue;
+
+            var pair = ParsePaths(PlaylistContents.Count, entery);
+            PlaylistContents.Add(pair.Key, pair.Value);
+        }
+    }
+
+    public bool ParsePramedDirectives(string entery)
+    {
+        if (!entery.StartsWith("#")) return false;
+        if (entery == Header) return true;
+
+        string[] splitEntry = entery.Split(":");
+
+        if (splitEntry.Length != 2) return false;
+        
+        switch (splitEntry.First())
+        {
+            case "#PLAYLIST":   // no ':' in directive, already removed in Split()
+                Name = splitEntry.Last();
+                return true;
+        }
+
+        return false;
+    }
+
+    public static bool HasHeaderDirective(string firstEntery)
+    {
+        return firstEntery == Header;
+    }
+
+    public KeyValuePair<int, string> ParsePaths(int order, string entery)
+    {
+        return new KeyValuePair<int, string>(order, entery);
+    }
 }
