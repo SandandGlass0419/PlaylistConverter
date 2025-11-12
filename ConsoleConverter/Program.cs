@@ -11,34 +11,93 @@ class Program
         PlaylistFileReadWrite.DefaultReader = ConsoleReader;
         PlaylistFileReadWrite.DefaultWriter = ConsoleWriter;
 
-        // M3u8File file = new M3u8File(@"C:\samples\Classics.m3u8");
-        //
-        // file.Export(@"C:\samples\test.m3u8");
-
-        SmplFile file = new SmplFile(@"C:\samples\Season 2-2.smpl");
-        
-        file.Export(@"C:\samples\smpltest.smpl");
+        if (ArgCommands.TryGetValue(args[0], out var Command))
+        {
+            Command.Invoke(args);
+        }
+        else
+        {
+            PlaylistConverterErrorThrower.ThrowError($"Can not recognize argument {args[0]}. Try using 'help'.");
+        }
     }
 
-    public static readonly Dictionary<string, Func<string, string, string>> ArgCommands = new()
+    public static readonly Dictionary<string, Action<string[]>> ArgCommands = new()
     {
-        { "tom3u8", Commands.convertToM3u },
-        { "tosmpl", Commands.convertToSmpl }
+        { Commands.TOM3U8, Commands.ConvertToM3u8 },
+        { Commands.TOSMPL, Commands.ConvertToSmpl },
+        { Commands.HELP, Commands.Help }
     };
 
-    protected static class Commands
+    public static class Commands
     {
-        public static string convertToM3u(string inpArg, string command)
+        public const string TOM3U8 = "tom3u8";
+        public const string TOSMPL = "tosmpl";
+        public const string HELP = "help";
+        
+        public static void ConvertToM3u8(string[] args)
         {
-            string dir = PlaylistConverterUtil.ValidatePath(inpArg, command);
-            string fileString = PlaylistConverterUtil.getFileAsString(dir);
+            ValidateArgLength(args, 3);
             
-            return String.Empty;
+            PlaylistConverterUtil.ValidatePath(args[1], ValidExtensions.Enum.SMPL);
+            string inpPath = args[1];
+            
+            SmplFile originalSmpl = new(inpPath);
+            M3u8File convertedM3u8 = (M3u8File) M3u8File.Create(originalSmpl);
+
+            string outPath = args[2];
+            if (!PlaylistConverterUtil.IsValidExtension(outPath, ValidExtensions.Enum.M3U8))
+            {
+                outPath = PlaylistConverterUtil.DefaultExportPath(args[1], ValidExtensions.Enum.M3U8);
+            }
+            
+            convertedM3u8.Export(outPath);
         }
 
-        public static string convertToSmpl(string inpArg, string command)
+        public static void ConvertToSmpl(string[] args)
         {
-            return String.Empty;
+            ValidateArgLength(args, 3);
+            
+            PlaylistConverterUtil.ValidatePath(args[1], ValidExtensions.Enum.M3U8);
+            string inpPath = args[1];
+
+            M3u8File originalM3u8 = new(inpPath);
+            SmplFile convertedSmpl = (SmplFile) SmplFile.Create(originalM3u8);
+
+            string outPath = args[2];
+            if (!PlaylistConverterUtil.IsValidExtension(outPath, ValidExtensions.Enum.SMPL))
+            {
+                outPath = PlaylistConverterUtil.DefaultExportPath(inpPath, ValidExtensions.Enum.SMPL);
+            }
+            
+            convertedSmpl.Export(outPath);
+        }
+
+        public static void Help(string[] args)
+        {
+            PlaylistConverterErrorThrower.ThrowError
+            (
+                "PlaylistConverter converts .smpl playlist files into .m3u8 playlist files. Use following commands to convert files.\n" +
+                "Commands:\n" +
+                "\n" +
+                $"{TOSMPL} InputM3u8FilePath OutputSmplFilePath\n" +
+                "   Converts the file in path InputM3u8FilePath, and generates a new file at path OutputSmplFilePath.\n" +
+                "   If OutputSmplFilePath exists, it will be overwrited.\n" +
+                "\n" +
+                $"{TOM3U8} InputSmplFilePath OutputM3u8FilePath\n" +
+                "   Converts the file in path InputSmplFilePath, and generates a new file at path OutputSmplFilePath.\n" +
+                "   If OutputSmplFilePath exists, it will be overwrited.\n" +
+                "\n" +
+                $"{HELP}\n" +
+                "   Displays this message."
+            );
+        }
+    }
+
+    public static void ValidateArgLength(string[] args, int expected)
+    {
+        if (args.Length != expected)
+        {
+            PlaylistConverterErrorThrower.ThrowError($"Invalid argmuents used! (check length, expected {expected} arguments)");
         }
     }
     
@@ -55,42 +114,48 @@ class Program
 
     private static void ConsoleWriter(string path, string contents)
     {
+        Directory.CreateDirectory(getDirectory(path));
         File.WriteAllText(path, contents, Encoding.UTF8);
+    }
+    
+    private static string getDirectory(string path)
+    {
+        return path.Remove(path.Length - path.Split('\\').Last().Length);
     }
 }
 
 public class PlaylistConverterUtil : IPlaylistConverterUtil
 {
-    public static string ValidatePath(string inpArg, string command)
+    public static bool ValidatePath(string arg, ValidExtensions.Enum expectedExtension, bool throwError = true)
     {
-        if (!File.Exists(inpArg))
-        { PlaylistConverterErrorThrower.ThrowError("This file doesn't exist. Try a different one!"); }
-        
-        if (!IsValidExtension(inpArg, command))
-        { PlaylistConverterErrorThrower.ThrowError("This file isn't using the right extension. Try ones with " + String.Join(" or ", ValidExtensions.Values)); }
+        if (!File.Exists(arg))
+        {
+            PlaylistConverterErrorThrower.ThrowError("This file doesn't exist. Try a different one!", throwError);
+            return false;
+        }
 
-        return inpArg;
+        if (!IsValidExtension(arg, expectedExtension))
+        {
+            PlaylistConverterErrorThrower.ThrowError("This file isn't using the right extension. Try ones with " + String.Join(" or ", ValidExtensions.ExtensionList), throwError);
+            return false;
+        }
+
+        return true;
     }
 
-    public static Dictionary<string, string> ValidExtensions { get; } = new()
+    public static bool IsValidExtension(string arg, ValidExtensions.Enum expectedExtension)
     {
-        { "tom3u8", "m3u8" },
-        { "tosmpl", "smpl" }
-    };
-
-    public static bool IsValidExtension(string inpArg, string command)
-    {
-        string extension = inpArg.Split('.').Last();
-        return extension == ValidExtensions[command];
+        string extension = arg.Split('.').Last();
+        return extension == ValidExtensions.getString(expectedExtension);
     }
 
-    public static bool IsWildCard(string inpArg)
+    public static string DefaultExportPath(string path, PlaylistConverter.ValidExtensions.Enum extension)
     {
-        return inpArg.Split('\\').Last().StartsWith("*.");
+        return path + '.' + ValidExtensions.getString(extension);
     }
 
-    public static string getFileAsString(string dir)
+    public static bool IsWildCard(string arg)
     {
-        return File.ReadAllText(dir);
+        return arg.Split('\\').Last().StartsWith("*.");
     }
 }

@@ -12,11 +12,23 @@ public partial class SmplFile : IPlaylist
     }
 
     public SortedDictionary<int, string> PlaylistContents { get; protected set; } = new();
-
+    
+    public SmplFile() {}
+    
     public SmplFile(string path)
     {
         Deserialize(PlaylistFileReadWrite.Read(path));
     }
+
+    public static object Create<T>(T playlistFile) where T : IPlaylist
+    {
+        return new SmplFile()
+        {
+            Name = playlistFile.Name,
+            PlaylistContents = playlistFile.PlaylistContents
+        };
+    }
+
 
     public void Deserialize(string fileText)
     {
@@ -78,15 +90,26 @@ public partial class M3u8File : IPlaylist
 {
     public const string Header = "#EXTM3U";
 
-    public string? Name { get; protected set; }
+    public string? Name { get; set; }
 
     public SortedDictionary<int, string> PlaylistContents { get; protected set; } = new();
 
+    public M3u8File() {}
+    
     public M3u8File(string path)
     {
         Deserialize(PlaylistFileReadWrite.Read(path));
     }
-    
+
+    public static object Create<T>(T playlistFile) where T : IPlaylist
+    {
+        return new M3u8File()
+        {
+            Name = playlistFile.Name,
+            PlaylistContents = playlistFile.PlaylistContents
+        };
+    }
+
     public void Deserialize(string fileText)
     {
         string[] splitText = fileText.Split('\n');
