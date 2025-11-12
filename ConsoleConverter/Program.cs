@@ -11,7 +11,7 @@ class Program
         PlaylistFileReadWrite.DefaultReader = ConsoleReader;
         PlaylistFileReadWrite.DefaultWriter = ConsoleWriter;
 
-        if (ArgCommands.TryGetValue(args[0], out var Command))
+        if (args.Length != 0 && ArgCommands.TryGetValue(args[0], out var Command))
         {
             Command.Invoke(args);
         }
