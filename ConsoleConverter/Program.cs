@@ -17,7 +17,7 @@ class Program
         }
         else
         {
-            PlaylistConverterErrorThrower.ThrowError($"Can not recognize argument {args[0]}. Try using 'help'.");
+            PlaylistConverterErrorThrower.ThrowError($"Can not recognize arguments '{String.Join(' ', args)}'. Try using 'help'.");
         }
     }
 
