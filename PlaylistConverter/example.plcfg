@@ -1,0 +1,8 @@
+<header>#EXTM3U</header>
+<title>#PLAYLIST:%playlist_title%</title>
+<description>
+#EXTINF:%length%,%artist% - %title%
+</description>
+<song>
+%path%
+</song>
