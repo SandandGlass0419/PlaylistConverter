@@ -1,11 +1,13 @@
+using System.Xml.Linq;
+
 namespace PlaylistConverter;
 
 public interface IPlaylistFactory
 {
-    public List<PlaylistComponent> Components { get; set; }
+    public List<Component> Components { get; set; }
 
-    public void InitComponents(Stream configXML);
+    public void SetComponents(XElement configXml);
     
-    public Playlist Create(byte[] playlistFile);
-    public byte[] Export(Playlist playlist);
+    public Playlist Create(string[] playlistFile);
+    public string[] Export(Playlist playlist);
 }

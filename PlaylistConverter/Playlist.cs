@@ -4,8 +4,8 @@ public record struct Song(string Title, string? Artist = null) {}
 
 public class Playlist
 {
-    public string? Title { get; set; }
-    public SortedList<int, Song> Contents { get; set; } = new();
+    public string? Title;
+    public SortedList<int, Song> Contents = new();
 
     // maybe add more stuff...
     
